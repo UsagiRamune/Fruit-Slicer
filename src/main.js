@@ -22,7 +22,7 @@ const config = {
     width: GAME_CONFIG.width,
     height: GAME_CONFIG.height,
   },
-  render: { antialias: true, roundPixels: false },
+render: { antialias: true, roundPixels: true },
 }
 
 const game = new Phaser.Game(config)

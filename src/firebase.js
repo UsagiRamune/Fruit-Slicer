@@ -159,3 +159,45 @@ export async function getPlayerSessions(username, limitCount = 20) {
   const snap = await getDocs(q)
   return snap.docs.map((d, i) => ({ id: d.id, ...d.data() }))
 }
+
+// --- ระบบดักจับ Console Log ---
+const logHistory = []
+const MAX_LOGS = 20
+
+// แอบครอบฟังก์ชัน console เดิมไว้
+const originalLog = console.log
+const originalWarn = console.warn
+const originalError = console.error
+
+function saveLog(type, args) {
+  try {
+    // แปลง object ให้เป็น string จะได้ส่งเข้า Firebase ได้
+    const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ')
+    logHistory.push({ type, msg, time: new Date().toISOString() })
+    if (logHistory.length > MAX_LOGS) logHistory.shift()
+  } catch (e) {
+    // กันเหนียวเผื่อ stringify พัง
+  }
+}
+
+console.log = function(...args) { saveLog('LOG', args); originalLog.apply(console, args) }
+console.warn = function(...args) { saveLog('WARN', args); originalWarn.apply(console, args) }
+console.error = function(...args) { saveLog('ERROR', args); originalError.apply(console, args) }
+
+// --- ฟังก์ชันส่ง Feedback เข้า Firebase ---
+export const submitFeedback = async (message) => {
+  try {
+    const feedbackRef = collection(db, 'feedbacks') // สร้างโฟลเดอร์ feedbacks ใน Database
+    
+    await addDoc(feedbackRef, {
+      message: message,
+      logs: logHistory, // แนบ log ที่ดักไว้ไปด้วย
+      userAgent: navigator.userAgent, // เก็บสเปคเบราว์เซอร์/มือถือเผื่อไว้ดู
+      timestamp: serverTimestamp()
+    })
+    return true
+  } catch (error) {
+    console.error("ส่ง Feedback ไม่ผ่านว่ะ:", error)
+    return false
+  }
+}

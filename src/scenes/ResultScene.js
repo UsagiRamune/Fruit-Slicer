@@ -196,12 +196,12 @@ export class ResultScene extends Phaser.Scene {
     this.buildBtn(W, PAD, CW, Y, '▶  เล่นอีกครั้ง', '#00e5ff', '#0a1f3c', () => {
       this.scene.start('TutorialScene')
     })
-    Y += 54
+    Y += 75
 
     this.buildBtn(W, PAD, CW, Y, '🏆  Leaderboard', '#1a1a3a', '#ffe100', () => {
       this.scene.start('LeaderboardScene', { version: this.version })
     }, '#ffe100')
-    Y += 54
+    Y += 70
 
     this.add.text(W / 2, Y, 'หน้าหลัก', {
       fontSize: '14px', color: '#555577', fontFamily: "'Nunito', Arial"

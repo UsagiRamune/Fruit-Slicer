@@ -96,7 +96,7 @@ export class LeaderboardScene extends Phaser.Scene {
         fontSize: '18px', color: '#ffffff', fontFamily: 'Arial'
       }).setOrigin(0, 0.5)
 
-      const score = this.add.text(width - 35, y, `${p.highScore}`, {
+      const score = this.add.text(width - 35, y, `${p.score}`, {
         fontSize: '18px', color: '#ffdd00', fontFamily: 'Arial Black'
       }).setOrigin(1, 0.5)
 

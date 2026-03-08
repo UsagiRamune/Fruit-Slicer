@@ -29,6 +29,7 @@ export class GameScene extends Phaser.Scene {
       fruitsSliced:     0,
       currentStreak:    0,
       bestStreak:       0,
+      criticalHits:     0,
     }
 
     this.drawBackground()
@@ -58,34 +59,36 @@ export class GameScene extends Phaser.Scene {
   createHUD() {
     const { width } = this.scale
 
-    this.add.text(width / 2, 20, 'SCORE', {
-      fontSize: '11px', color: '#6666aa',
+    // Score (ตรงกลาง)
+    this.add.text(width / 2, 25, 'SCORE', {
+      fontSize: '12px', color: '#6666aa',
       fontFamily: "'Nunito', Arial", letterSpacing: 4
     }).setOrigin(0.5).setDepth(10)
 
-    this.scoreTxt = this.add.text(width / 2, 52, '0', {
+    this.scoreTxt = this.add.text(width / 2, 60, '0', {
       fontSize: '48px', color: '#ffffff',
       fontFamily: "'Fredoka One', 'Arial Black'",
       stroke: '#000022', strokeThickness: 4
     }).setOrigin(0.5).setDepth(10)
 
+    // Level (ซ้ายบน)
+    this.diffTxt = this.add.text(20, 20, 'LV.1', {
+      fontSize: '14px', color: '#6666aa',
+      fontFamily: "'Nunito', Arial", letterSpacing: 2
+    }).setOrigin(0, 0).setDepth(10)
+
+    // หัวใจ ย้ายมาซ้ายบน ใต้ Level
     this.heartsGfx = []
     for (let i = 0; i < GAME_CONFIG.lives; i++) {
       const hgfx = this.add.graphics().setDepth(10)
-      drawHeart(hgfx, width / 2 - 38 + i * 38, 32, 13, 0xff2244)
+      drawHeart(hgfx, 32 + i * 32, 50, 12, 0xff2244)
       this.heartsGfx.push(hgfx)
     }
-
-    this.diffTxt = this.add.text(18, 20, 'LV.1', {
-      fontSize: '12px', color: '#6666aa',
-      fontFamily: "'Nunito', Arial", letterSpacing: 2
-    }).setOrigin(0, 0).setDepth(10)
   }
 
   updateHearts() {
-    const width = this.scale.width
     this.heartsGfx.forEach((hgfx, i) => {
-      drawHeart(hgfx, width / 2 - 38 + i * 38, 32, 13, i < this.lives ? 0xff2244 : 0x222244)
+      drawHeart(hgfx, 32 + i * 32, 50, 12, i < this.lives ? 0xff2244 : 0x222244)
     })
   }
 
@@ -186,7 +189,7 @@ export class GameScene extends Phaser.Scene {
       delay: GAME_CONFIG.fruitSpawnInterval,
       callback: () => {
         if (this.isGameOver) return
-        const count = this.difficulty >= 3 ? Phaser.Math.Between(1, 2) : 1
+        const count = this.difficulty >= 4 ? Phaser.Math.Between(1, 2) : 1
         for (let i = 0; i < count; i++) {
           this.time.delayedCall(i * 200, this.spawnFruit, [], this)
         }
@@ -195,12 +198,12 @@ export class GameScene extends Phaser.Scene {
     })
 
     this.time.addEvent({
-      delay: 10000,
+      delay: 20000, 
       callback: () => {
         if (this.isGameOver) return
         this.difficulty++
-        if (this.spawnTimer.delay > 400) {
-          this.spawnTimer.delay = Math.max(400, this.spawnTimer.delay - 150)
+        if (this.spawnTimer.delay > 500) {
+          this.spawnTimer.delay = Math.max(500, this.spawnTimer.delay - 70)
         }
         this.diffTxt.setText(`LV.${this.difficulty}`)
       },
@@ -214,24 +217,26 @@ export class GameScene extends Phaser.Scene {
     const isBomb = Phaser.Math.Between(1, 7) === 1
     const data   = isBomb ? BOMB : Phaser.Utils.Array.GetRandom(FRUITS)
 
-    const x     = Phaser.Math.Between(width * 0.15, width * 0.85)
+    const x     = Phaser.Math.Between(width * 0.25, width * 0.75)
     const speed = Phaser.Math.Between(
-      GAME_CONFIG.fruitSpeedMin + this.difficulty * 30,
-      GAME_CONFIG.fruitSpeedMax + this.difficulty * 30
+      GAME_CONFIG.fruitSpeedMin + this.difficulty * 20,
+      GAME_CONFIG.fruitSpeedMax + this.difficulty * 20
     )
     const side  = x < width / 2 ? 1 : -1
-    const vxMag = speed * Phaser.Math.FloatBetween(0.05, 0.30)
+    const vxMag = speed * Phaser.Math.FloatBetween(0.15, 0.30)
     const vx    = side * vxMag
 
     const fruit = {
-      data, x, y: height + 80,
-      vx, vy: -speed, rotation: 0,
+      data, x, y: height + 50,
+      vx, 
+      vy: -(speed * 1.15), 
+      rotation: 0,
       rotSpeed: Phaser.Math.FloatBetween(-2.5, 2.5),
       radius: data.radius, sliced: false, removing: false,
       gfx: this.add.graphics().setDepth(6)
     }
     drawFruitShape(fruit.gfx, data, 0, 0)
-    fruit.gfx.setPosition(x, height + 80)
+    fruit.gfx.setPosition(x, height + 50)
     this.fruits.push(fruit)
   }
 
@@ -244,14 +249,23 @@ export class GameScene extends Phaser.Scene {
 
   // ─── SLICE ────────────────────────────────────
   checkSlice(px, py) {
+    let sliceAngle = 0
+    if (this.trailPoints.length > 1) {
+      const p0 = this.trailPoints[0]
+      sliceAngle = Phaser.Math.Angle.Between(p0.x, p0.y, px, py)
+    }
+
     this.fruits.forEach(fruit => {
       if (fruit.sliced || fruit.removing) return
       const dist = Phaser.Math.Distance.Between(px, py, fruit.x, fruit.y)
-      if (dist < fruit.radius + 12) this.sliceFruit(fruit)
+      if (dist < fruit.radius + 12) {
+         const isCritical = dist < 15; 
+         this.sliceFruit(fruit, isCritical, sliceAngle) 
+      }
     })
   }
 
-  sliceFruit(fruit) {
+  sliceFruit(fruit, isCritical = false, sliceAngle = 0) {
     if (fruit.sliced || fruit.removing) return
     fruit.sliced   = true
     fruit.removing = true
@@ -261,7 +275,7 @@ export class GameScene extends Phaser.Scene {
       return
     }
 
-    // POI
+    // POI Tracking
     if (!this.poi.firstSliceDone) {
       this.poi.firstSliceDone   = true
       this.poi.timeToFirstSlice = Date.now() - this.startTime
@@ -270,6 +284,9 @@ export class GameScene extends Phaser.Scene {
     this.poi.currentStreak++
     if (this.poi.currentStreak > this.poi.bestStreak) {
       this.poi.bestStreak = this.poi.currentStreak
+    }
+    if (isCritical) {
+      this.poi.criticalHits++
     }
 
     this.combo++
@@ -280,20 +297,22 @@ export class GameScene extends Phaser.Scene {
     }, 1200)
     if (this.combo > this.poi.maxCombo) this.poi.maxCombo = this.combo
 
-    const multiplier = this.combo >= 5 ? 3 : this.combo >= 3 ? 2 : 1
+    let multiplier = this.combo >= 5 ? 3 : this.combo >= 3 ? 2 : 1
+    if (isCritical) multiplier *= 2 
+
     const pts        = fruit.data.points * multiplier
     this.score      += pts
     this.scoreTxt.setText(this.score)
 
-    // score bounce
     this.tweens.add({
       targets: this.scoreTxt,
       scaleX: 1.25, scaleY: 1.25,
       duration: 80, yoyo: true, ease: 'Power2'
     })
 
-    this.spawnHalves(fruit)
-    if (this.version === 'B') this.juicySlice(fruit, pts)
+    this.spawnHalves(fruit, sliceAngle)
+    
+    if (this.version === 'B') this.juicySlice(fruit, pts, isCritical, sliceAngle)
     else                      this.plainSlice(fruit, pts)
 
     fruit.gfx?.destroy()
@@ -312,12 +331,16 @@ export class GameScene extends Phaser.Scene {
     })
   }
 
-  juicySlice(fruit, pts) {
-    const txt = this.add.text(fruit.x, fruit.y - 20, `+${pts}`, {
-      fontSize: '36px', color: '#ffe100',
+  juicySlice(fruit, pts, isCritical, sliceAngle = 0) {
+    const textStr = isCritical ? `CRITICAL!\n+${pts}` : `+${pts}`
+    const txtColor = isCritical ? '#ff0055' : '#ffe100'
+
+    const txt = this.add.text(fruit.x, fruit.y - 20, textStr, {
+      fontSize: '36px', color: txtColor, align: 'center',
       fontFamily: "'Fredoka One', 'Arial Black'",
       stroke: '#000', strokeThickness: 3
     }).setOrigin(0.5).setDepth(15)
+    
     this.tweens.add({
       targets: txt,
       y: fruit.y - 110, scaleX: 1.5, scaleY: 1.5, alpha: 0,
@@ -325,22 +348,60 @@ export class GameScene extends Phaser.Scene {
       onComplete: () => txt.destroy()
     })
 
-    this.spawnJuiceParticles(fruit)
     this.cameras.main.shake(60, 0.006)
 
-    const flash = this.add.graphics().setDepth(50)
-    flash.fillStyle(0xffffff, 0.14)
-    flash.fillRect(0, 0, this.scale.width, this.scale.height)
+    // เอฟเฟกต์คราบน้ำผลไม้สาดลงพื้น (เน้นตรงกลางแบบฉ่ำๆ แถมสาดไปตามองศาดาบ)
+    const color = fruit.data.innerColor || 0xffffff
+    const splatterCount = 15 
+    
+    for (let i = 0; i < splatterCount; i++) {
+      const splatter = this.add.graphics().setDepth(1)
+      splatter.fillStyle(color, Phaser.Math.FloatBetween(0.5, 0.9))
+      
+      const isCore = i < 5 
+      const dist = isCore ? Phaser.Math.FloatBetween(0, 8) : Math.pow(Math.random(), 2) * 60
+      
+      const spread = Math.PI / 3; 
+      const angle = isCore ? Phaser.Math.FloatBetween(0, Math.PI * 2) : sliceAngle + Phaser.Math.FloatBetween(-spread, spread)
+      
+      const sx = fruit.x + Math.cos(angle) * dist
+      const sy = fruit.y + Math.sin(angle) * dist
+      
+      const maxR = isCore ? Phaser.Math.Between(25, 40) : (dist < 20 ? 18 : 10)
+      const r = isCore ? maxR : Phaser.Math.Between(6, maxR)
+      
+      splatter.fillEllipse(sx, sy, r, r * Phaser.Math.FloatBetween(0.6, 1.4))
+      splatter.setRotation(Phaser.Math.FloatBetween(0, Math.PI * 2))
+
+      this.tweens.add({
+        targets: splatter, alpha: 0, delay: 800, duration: 1500,
+        onComplete: () => splatter.destroy()
+      })
+    }
+
+    this.spawnJuiceParticles(fruit, sliceAngle)
+
+    // แสงวาบเล็กๆ เฉพาะจุดที่โดนหั่น แก้จุด Origin แล้ว
+    const hitGlow = this.add.graphics().setDepth(14)
+    hitGlow.setPosition(fruit.x, fruit.y)
+    hitGlow.fillStyle(0xffffff, 0.8)
+    hitGlow.fillCircle(0, 0, fruit.radius * 1.5)
+    
     this.tweens.add({
-      targets: flash, alpha: 0, duration: 80,
-      onComplete: () => flash.destroy()
+      targets: hitGlow,
+      alpha: 0,
+      scaleX: 1.5,
+      scaleY: 1.5,
+      duration: 150,
+      ease: 'Power2',
+      onComplete: () => hitGlow.destroy()
     })
 
     if (this.combo >= 2) {
       const colors = ['', '', '#ffe100', '#ff9500', '#ff4400', '#ff0055']
-      const color  = colors[Math.min(this.combo, 5)] || '#ff0055'
+      const cColor  = colors[Math.min(this.combo, 5)] || '#ff0055'
       const ct = this.add.text(this.scale.width / 2, 130, `${this.combo}× COMBO!`, {
-        fontSize: '28px', color,
+        fontSize: '28px', color: cColor,
         fontFamily: "'Fredoka One', 'Arial Black'",
         stroke: '#000', strokeThickness: 3
       }).setOrigin(0.5).setDepth(20)
@@ -352,55 +413,80 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  spawnJuiceParticles(fruit) {
+  spawnJuiceParticles(fruit, sliceAngle = 0) {
     const color = fruit.data.innerColor || 0xffffff
-    for (let i = 0; i < 14; i++) {
-      const angle = (i / 14) * Math.PI * 2
-      const spd   = Phaser.Math.Between(100, 220)
-      const p     = this.add.graphics().setDepth(15)
-      const r     = Phaser.Math.Between(5, 10)
+    const particleCount = 35; 
+    
+    for (let i = 0; i < particleCount; i++) {
+      const isCore = i < 10 
+      const isFast = Math.random() > 0.8
+      
+      const angle = isCore 
+        ? Phaser.Math.FloatBetween(0, Math.PI * 2) 
+        : sliceAngle + Phaser.Math.FloatBetween(-Math.PI/4, Math.PI/4)
+        
+      const spd = isCore ? Phaser.Math.Between(10, 30) : (isFast ? Phaser.Math.Between(180, 280) : Phaser.Math.Between(60, 120))
+      const r = isCore ? Phaser.Math.Between(12, 18) : (isFast ? Phaser.Math.Between(3, 6) : Phaser.Math.Between(6, 10))
+      
+      const p = this.add.graphics().setDepth(15)
       let px = fruit.x, py = fruit.y
       const vx = Math.cos(angle) * spd
       const vy = Math.sin(angle) * spd
       let life = 0
+      
       const update = () => {
-        life += 16; px += vx * 0.016; py += vy * 0.016 + 100 * 0.016
-        const alpha = 1 - life / 450
+        life += 16
+        px += vx * 0.016; py += vy * 0.016 + 180 * 0.016 
+        
+        const alpha = 1 - life / 400
         p.clear()
         p.fillStyle(color, Math.max(0, alpha))
-        p.fillCircle(px, py, r * Math.max(0, 1 - life / 500))
-        if (life >= 450) { p.destroy(); this.events.off('update', update) }
+        p.fillCircle(px, py, r * Math.max(0, 1 - Math.pow(life / 400, 2)))
+        
+        if (life >= 400) { p.destroy(); this.events.off('update', update) }
       }
       this.events.on('update', update)
     }
   }
 
-  spawnHalves(fruit) {
+  spawnHalves(fruit, sliceAngle = 0) {
     const leftGfx  = this.add.graphics().setDepth(7)
     const rightGfx = this.add.graphics().setDepth(7)
     const r = fruit.data.radius
     const c = fruit.data.innerColor || 0xffffff
 
     leftGfx.fillStyle(c, 1)
-    leftGfx.slice(0, 0, r, Phaser.Math.DegToRad(90), Phaser.Math.DegToRad(270), false)
+    leftGfx.slice(0, 0, r, sliceAngle, sliceAngle + Math.PI, false)
     leftGfx.fillPath()
     leftGfx.lineStyle(2, 0xffffff, 0.3)
-    leftGfx.beginPath(); leftGfx.moveTo(0, -r); leftGfx.lineTo(0, r); leftGfx.strokePath()
+    leftGfx.beginPath()
+    leftGfx.moveTo(Math.cos(sliceAngle)*r, Math.sin(sliceAngle)*r)
+    leftGfx.lineTo(Math.cos(sliceAngle + Math.PI)*r, Math.sin(sliceAngle + Math.PI)*r)
+    leftGfx.strokePath()
 
     rightGfx.fillStyle(c, 1)
-    rightGfx.slice(0, 0, r, Phaser.Math.DegToRad(270), Phaser.Math.DegToRad(90), false)
+    rightGfx.slice(0, 0, r, sliceAngle + Math.PI, sliceAngle + Math.PI * 2, false)
     rightGfx.fillPath()
     rightGfx.lineStyle(2, 0xffffff, 0.3)
-    rightGfx.beginPath(); rightGfx.moveTo(0, -r); rightGfx.lineTo(0, r); rightGfx.strokePath()
+    rightGfx.beginPath()
+    rightGfx.moveTo(Math.cos(sliceAngle)*r, Math.sin(sliceAngle)*r)
+    rightGfx.lineTo(Math.cos(sliceAngle + Math.PI)*r, Math.sin(sliceAngle + Math.PI)*r)
+    rightGfx.strokePath()
 
     leftGfx.setPosition(fruit.x, fruit.y)
     rightGfx.setPosition(fruit.x, fruit.y)
 
+    const perpAngle = sliceAngle - Math.PI / 2
+    const speed1 = Phaser.Math.Between(150, 300)
+    const speed2 = Phaser.Math.Between(150, 300)
+
     this.halves.push({
       left: leftGfx, right: rightGfx,
       lx: fruit.x, ly: fruit.y, rx: fruit.x, ry: fruit.y,
-      lvx: -Phaser.Math.Between(100, 200), rvx: Phaser.Math.Between(100, 200),
-      lvy: Phaser.Math.Between(-300, -150), rvy: Phaser.Math.Between(-300, -150),
+      lvx: Math.cos(perpAngle) * speed1,
+      lvy: Math.sin(perpAngle) * speed1 - 100,
+      rvx: Math.cos(perpAngle + Math.PI) * speed2,
+      rvy: Math.sin(perpAngle + Math.PI) * speed2 - 100,
       lrot: Phaser.Math.FloatBetween(-4, -2), rrot: Phaser.Math.FloatBetween(2, 4),
       alpha: 1, life: 0
     })
@@ -423,7 +509,8 @@ export class GameScene extends Phaser.Scene {
       })
     }
 
-    this.spawnHalves(fruit)
+    // ระเบิดให้ขาดแบบสุ่มไปเลย ไม่ต้องตามองศาฟัน
+    this.spawnHalves(fruit, 0)
     fruit.gfx?.destroy()
     this.fruits = this.fruits.filter(f => f !== fruit)
     if (this.lives <= 0) this.endGame()
@@ -526,6 +613,7 @@ export class GameScene extends Phaser.Scene {
         maxCombo:         this.poi.maxCombo,
         fruitsSliced:     this.poi.fruitsSliced,
         bestStreak:       this.poi.bestStreak,
+        criticalHits:     this.poi.criticalHits
       }
     })
   }

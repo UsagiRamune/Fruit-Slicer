@@ -5,39 +5,35 @@ export function drawFruitShape(gfx, data, x, y) {
   switch(data.drawFn) {
 
     case 'watermelon': {
-    // เปลือกเขียวเข้ม
-    gfx.fillStyle(0x1a7a1a, 1)
-    gfx.fillCircle(x, y, r)
-    // แถบเขียวอ่อน 6 แถบ ผอมๆ
-    gfx.fillStyle(0x55dd55, 1)
-    for (let i = 0; i < 6; i++) {
-        const a = (i / 6) * Math.PI * 2
-        // วาดเป็นเส้นหนาๆ แทนการ fillPath
-        gfx.lineStyle(r * 0.12, 0x55dd55, 1)
-        gfx.beginPath()
-        gfx.moveTo(x, y)
-        gfx.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r)
-        gfx.strokePath()
-    }
-    // เนื้อแดงด้านใน
-    gfx.fillStyle(0xff3333, 1)
-    gfx.fillCircle(x, y, r * 0.75)
-    // เมล็ด
-    gfx.fillStyle(0x111111, 1)
-    const seeds = [
-        [-0.2, -0.1], [0.15, -0.25],
-        [0.25, 0.15], [-0.1, 0.22], [0.02, 0.02]
-    ]
-    seeds.forEach(([sx, sy]) => {
-        gfx.fillEllipse(x + sx * r, y + sy * r, 5, 8)
-    })
-    // outline
-    gfx.lineStyle(4, 0x0d4d0d, 1)
-    gfx.strokeCircle(x, y, r)
-    // highlight
-    gfx.fillStyle(0xffffff, 0.15)
-    gfx.fillCircle(x - r * 0.3, y - r * 0.3, r * 0.22)
-    break
+      // เปลือกชั้นนอกสุด เขียวเข้ม
+      gfx.fillStyle(0x1a7a1a, 1)
+      gfx.fillCircle(x, y, r)
+      
+      // เปลือกชั้นใน เขียวสว่าง
+      gfx.fillStyle(0x2ecc71, 1)
+      gfx.fillCircle(x, y, r * 0.9)
+      
+      // ขอบขาวบางๆ (ส่วนเปลือกที่ติดเนื้อ)
+      gfx.fillStyle(0xecf0f1, 1)
+      gfx.fillCircle(x, y, r * 0.8)
+      
+      // เนื้อแดง
+      gfx.fillStyle(0xff4757, 1)
+      gfx.fillCircle(x, y, r * 0.75)
+      
+      // เมล็ด (จัดเรียงใหม่ให้ดูเป็นธรรมชาติ ไม่แข็งเกินไป)
+      gfx.fillStyle(0x111111, 1)
+      const seeds = [
+          [-0.2, 0.2], [0.2, 0.2], [0, -0.2], [-0.3, -0.1], [0.3, -0.1]
+      ]
+      seeds.forEach(([sx, sy]) => {
+          gfx.fillEllipse(x + sx * r, y + sy * r, 5, 8)
+      })
+      
+      // ไฮไลต์แสงตกกระทบ
+      gfx.fillStyle(0xffffff, 0.2)
+      gfx.fillCircle(x - r * 0.3, y - r * 0.3, r * 0.2)
+      break
     }
 
     case 'orange': {
@@ -69,136 +65,142 @@ export function drawFruitShape(gfx, data, x, y) {
     }
 
     case 'lemon': {
-      // ── วงรีเหลือง มีปลายแหลมสองข้าง ──
-      gfx.fillStyle(0xffee22, 1)
-      gfx.fillEllipse(x, y, r * 2.2, r * 1.6)
-      // เนื้อด้านใน
-      gfx.fillStyle(0xffff88, 1)
-      gfx.fillEllipse(x, y, r * 1.7, r * 1.2)
-      // เส้นกลาง
-      gfx.lineStyle(2, 0xddcc00, 0.7)
-      gfx.beginPath()
-      gfx.moveTo(x - r * 1.0, y)
-      gfx.lineTo(x + r * 1.0, y)
-      gfx.strokePath()
-      // เส้น segment
-      for (let i = -2; i <= 2; i++) {
-        if (i === 0) continue
-        gfx.lineStyle(1.5, 0xddcc00, 0.5)
-        gfx.beginPath()
-        gfx.moveTo(x, y)
-        gfx.lineTo(x + i * r * 0.4, y - r * 0.7)
-        gfx.strokePath()
-        gfx.beginPath()
-        gfx.moveTo(x, y)
-        gfx.lineTo(x + i * r * 0.4, y + r * 0.7)
-        gfx.strokePath()
+      // ใช้สมการคณิตศาสตร์คำนวณจุดรอบวงรี แล้วดึงจุกหัวท้ายให้แหลมออกแบบเลมอน
+      const lemonPoints = []
+      for(let angle = 0; angle < Math.PI * 2; angle += 0.1) {
+          let px = Math.cos(angle) * r * 0.95
+          let py = Math.sin(angle) * r * 0.6
+          
+          // เติมจุกแหลมซ้ายขวา
+          if (Math.cos(angle) > 0.5) {
+              px += Math.pow(Math.cos(angle) - 0.5, 2) * r * 1.2
+          }
+          if (Math.cos(angle) < -0.5) {
+              px -= Math.pow(Math.abs(Math.cos(angle)) - 0.5, 2) * r * 1.2
+          }
+          lemonPoints.push(new Phaser.Math.Vector2(x + px, y + py))
       }
-      // outline
-      gfx.lineStyle(3, 0xbbaa00, 1)
-      gfx.strokeEllipse(x, y, r * 2.2, r * 1.6)
-      // ไฮไลต์
-      gfx.fillStyle(0xffffff, 0.25)
-      gfx.fillEllipse(x - r * 0.3, y - r * 0.3, r * 0.6, r * 0.4)
+      
+      // วาดเนื้อเลมอนและขอบ
+      gfx.fillStyle(0xffe600, 1)
+      gfx.fillPoints(lemonPoints, true)
+      gfx.lineStyle(4, 0xcca300, 1)
+      gfx.strokePoints(lemonPoints, true, true)
+
+      // รูขุมขนเปลือกเลมอน
+      gfx.fillStyle(0xd4c800, 0.6)
+      const pores = [
+        [-0.4, -0.2], [0.3, -0.4], [0.5, 0.2], [-0.2, 0.4], [0.1, 0.5],
+        [-0.5, 0.2], [0.2, -0.2], [-0.1, 0.1], [0.4, 0.4], [-0.6, -0.3]
+      ]
+      pores.forEach(([px, py]) => {
+        gfx.fillCircle(x + px * r, y + py * r, r * 0.04)
+      })
+
+      // ไฮไลต์แสงตกกระทบ
+      gfx.fillStyle(0xffffff, 0.3)
+      gfx.fillEllipse(x, y - r * 0.35, r * 0.6, r * 0.15)
       break
     }
 
     case 'peach': {
-      // ── วงกลมชมพูอมส้ม ──
-      gfx.fillStyle(0xff9955, 1)
+      // ตัวลูกพีช
+      gfx.fillStyle(0xff8c69, 1)
       gfx.fillCircle(x, y, r)
-      // ไล่สีจากกลาง
-      gfx.fillStyle(0xffbb77, 1)
-      gfx.fillCircle(x, y, r * 0.75)
-      gfx.fillStyle(0xffddaa, 1)
-      gfx.fillCircle(x, y, r * 0.45)
-      // เส้นกลางพีช
-      gfx.lineStyle(3, 0xff7744, 0.7)
+
+      // แก้มพีช
+      gfx.fillStyle(0xff5e62, 0.6)
+      gfx.fillCircle(x - r * 0.2, y + r * 0.1, r * 0.6)
+
+      // ก้านพีช
+      gfx.lineStyle(4, 0x5c4033, 1)
       gfx.beginPath()
-      gfx.moveTo(x, y - r * 0.9)
-      gfx.lineTo(x, y + r * 0.9)
+      gfx.moveTo(x + r * 0.1, y - r * 0.9)
+      gfx.lineTo(x + r * 0.2, y - r * 1.2)
       gfx.strokePath()
-      // ก้าน
-      gfx.lineStyle(3, 0x664400, 1)
-      gfx.beginPath()
-      gfx.moveTo(x, y - r)
-      gfx.lineTo(x + 5, y - r - 14)
-      gfx.strokePath()
-      // ใบ
-      gfx.fillStyle(0x33aa33, 1)
-      gfx.fillEllipse(x + 10, y - r - 10, 18, 10)
-      // outline
-      gfx.lineStyle(3, 0xdd6633, 1)
+
+      // วาดใบไม้ (ใช้คณิตศาสตร์สร้างจุดโพลีกอนทรงใบไม้เอียง -45 องศา)
+      const leafPoints = []
+      for(let angle = 0; angle < Math.PI * 2; angle += 0.2) {
+          let lx = Math.cos(angle) * r * 0.4
+          let ly = Math.sin(angle) * r * 0.15
+          let rot = -Math.PI / 4 // หมุนองศา
+          let rx = lx * Math.cos(rot) - ly * Math.sin(rot)
+          let ry = lx * Math.sin(rot) + ly * Math.cos(rot)
+          leafPoints.push(new Phaser.Math.Vector2(x + r*0.2 + rx, y - r*1.2 + ry))
+      }
+      gfx.fillStyle(0x2ecc71, 1)
+      gfx.fillPoints(leafPoints, true)
+      gfx.lineStyle(2, 0x27ae60, 1)
+      gfx.strokePoints(leafPoints, true, true)
+
+      // เส้นขอบลูกพีช
+      gfx.lineStyle(4, 0xdc7633, 1)
       gfx.strokeCircle(x, y, r)
+
+      // ร่องพีช (ใช้ส่วนโค้งวงกลมใหญ่ตีโค้งเข้ามาตื้นๆ แทน)
+      gfx.lineStyle(4, 0xd94e53, 0.8)
+      gfx.beginPath()
+      // ลากจากมุม 135 องศา ไป 225 องศา โดยจุดศูนย์กลางเยื้องไปทางขวา
+      gfx.arc(x + r * 0.8, y, r * 1.2, Math.PI * 0.75, Math.PI * 1.25, false)
+      gfx.strokePath()
+
       // ไฮไลต์
-      gfx.fillStyle(0xffffff, 0.25)
-      gfx.fillCircle(x - r * 0.3, y - r * 0.3, r * 0.2)
+      gfx.fillStyle(0xffffff, 0.2)
+      gfx.fillCircle(x + r * 0.35, y - r * 0.35, r * 0.2)
       break
     }
 
     case 'pineapple': {
-    const bodyW = r * 1.3
-    const bodyH = r * 1.7
-
-    // ตัวสับปะรดสีเหลืองทอง
-    gfx.fillStyle(0xddaa00, 1)
-    gfx.fillEllipse(x, y + r * 0.1, bodyW, bodyH)
-
-    // ลายสับปะรด — วาดเป็น X pattern ไม่ใช่ grid
-    gfx.lineStyle(2, 0xaa7700, 0.9)
-    // เส้นทแยงซ้าย → ขวา
-    for (let i = -4; i <= 4; i++) {
-        const offset = i * r * 0.22
-        gfx.beginPath()
-        gfx.moveTo(x - bodyW * 0.5, y + offset - bodyH * 0.1)
-        gfx.lineTo(x + bodyW * 0.5, y + offset + bodyH * 0.1)
-        gfx.strokePath()
-    }
-    // เส้นทแยงขวา → ซ้าย
-    for (let i = -4; i <= 4; i++) {
-        const offset = i * r * 0.22
-        gfx.beginPath()
-        gfx.moveTo(x + bodyW * 0.5, y + offset - bodyH * 0.1)
-        gfx.lineTo(x - bodyW * 0.5, y + offset + bodyH * 0.1)
-        gfx.strokePath()
-    }
-
-    // outline
-    gfx.lineStyle(3, 0x996600, 1)
-    gfx.strokeEllipse(x, y + r * 0.1, bodyW, bodyH)
-
-    // highlight
-    gfx.fillStyle(0xffffff, 0.15)
-    gfx.fillEllipse(x - r * 0.2, y - r * 0.3, r * 0.5, r * 0.8)
-
-    // ใบ — เรียบง่ายขึ้น
-    const leafData = [
-        { angle: -90, len: r * 0.95, w: 9 },
-        { angle: -130, len: r * 0.75, w: 7 },
-        { angle: -50,  len: r * 0.75, w: 7 },
-        { angle: -155, len: r * 0.55, w: 5 },
-        { angle: -25,  len: r * 0.55, w: 5 },
-    ]
-    const baseY = y - bodyH * 0.48
-    leafData.forEach((leaf, i) => {
-        const rad = Phaser.Math.DegToRad(leaf.angle)
-        const ex  = x + Math.cos(rad) * leaf.len
-        const ey  = baseY + Math.sin(rad) * leaf.len
-        const col = i % 2 === 0 ? 0x2ecc2e : 0x22aa22
-        gfx.fillStyle(col, 1)
-        gfx.fillTriangle(
-        x - leaf.w / 2, baseY,
-        x + leaf.w / 2, baseY,
-        ex, ey
-        )
-        // เส้นกลางใบ
-        gfx.lineStyle(1, 0x116611, 1)
-        gfx.beginPath()
-        gfx.moveTo(x, baseY)
-        gfx.lineTo(ex, ey)
-        gfx.strokePath()
-    })
-    break
+      const bodyW = r * 1.3
+      const bodyH = r * 1.7
+      const cy = y + r * 0.1 // จุดศูนย์กลางแกน Y ของตัวผล
+      
+      // ใบไม้
+      const leafAngles = [-120, -105, -90, -75, -60]
+      leafAngles.forEach(angle => {
+          const rad = Phaser.Math.DegToRad(angle)
+          const ex = x + Math.cos(rad) * r * 1.3
+          const ey = y + Math.sin(rad) * r * 1.3
+          gfx.lineStyle(8, 0x2ecc71, 1) 
+          gfx.beginPath()
+          gfx.moveTo(x, y - bodyH * 0.35)
+          gfx.lineTo(ex, ey)
+          gfx.strokePath()
+      })
+      
+      // ตัวผลสีเหลืองทอง
+      gfx.fillStyle(0xf1c40f, 1)
+      gfx.fillEllipse(x, cy, bodyW, bodyH)
+      gfx.lineStyle(4, 0xd35400, 1)
+      gfx.strokeEllipse(x, cy, bodyW, bodyH)
+      
+      // ลายตาสับปะรด (ใช้สมการวงรีคุมขอบเขต)
+      gfx.lineStyle(3, 0xd35400, 0.7)
+      const a = bodyW / 2 // รัศมีแกน X
+      const b = bodyH / 2 // รัศมีแกน Y
+      
+      for (let i = -3; i <= 3; i++) {
+          for (let j = -3; j <= 3; j++) {
+              let px = x + i * r * 0.3
+              let py = cy + j * r * 0.4
+              
+              // เช็คสมการวงรี: (x-h)^2 / a^2 + (y-k)^2 / b^2 <= 1
+              // กูตั้งค่าไว้ที่ < 0.65 เพื่อให้ลายมันอยู่แค่เนื้อใน ไม่ทับเส้นขอบ
+              if (Math.pow((px - x) / a, 2) + Math.pow((py - cy) / b, 2) < 0.65) {
+                  gfx.beginPath()
+                  gfx.moveTo(px - 5, py - 4)
+                  gfx.lineTo(px, py + 4)
+                  gfx.lineTo(px + 5, py - 4)
+                  gfx.strokePath()
+              }
+          }
+      }
+      
+      // ไฮไลต์แสงให้ดูนูนๆ
+      gfx.fillStyle(0xffffff, 0.2)
+      gfx.fillEllipse(x - r * 0.2, y - r * 0.1, r * 0.4, r * 0.7)
+      break
     }
 
     case 'bomb': {
