@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>Fruit Slicer - Full Data Insights</title>
+  <style>
+    body { background: #0d0d1a; color: #fff; font-family: 'Segoe UI', sans-serif; padding: 20px; }
+    h1 { color: #00e5ff; border-bottom: 2px solid #333; }
+    .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+    .tab-btn { background: #1a1a2e; color: #888; border: 2px solid #333; padding: 12px 24px; border-radius: 8px; cursor: pointer; transition: 0.3s; }
+    .tab-btn.active { background: #00e5ff; color: #0d0d1a; border-color: #00e5ff; font-weight: bold; }
+    
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Table Design */
+    table { width: 100%; border-collapse: collapse; background: #1a1a2e; border-radius: 10px; overflow: hidden; margin-top: 10px; }
+    th, td { padding: 15px; text-align: left; border-bottom: 1px solid #2a2a4e; }
+    th { background: #2a2a4e; color: #00e5ff; text-transform: uppercase; font-size: 13px; }
+    tr:hover { background: #232344; cursor: pointer; }
+
+    /* Modal Style - เอาไว้เจาะดูข้อมูลรายคน */
+    #user-modal {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.9); z-index: 1000; overflow-y: auto;
+    }
+    .modal-content {
+      background: #16213e; margin: 5% auto; padding: 30px; width: 90%; max-width: 900px;
+      border-radius: 15px; border: 1px solid #00e5ff; box-shadow: 0 0 30px rgba(0,229,255,0.2);
+    }
+    .close-btn { float: right; font-size: 28px; cursor: pointer; color: #ff4488; }
+    .session-card {
+      background: #1a1a2e; padding: 15px; border-radius: 8px; margin-bottom: 10px;
+      border-left: 4px solid #00ff88; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;
+    }
+    .feedback-card { background: #1a1a2e; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #ff4488; }
+    .badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+    .badge-a { background: #9b59b6; }
+    .badge-b { background: #f1c40f; color: #000; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>📊 Fruit Slicer - Admin Insights</h1>
+  
+  <div class="tabs">
+    <button id="btn-players" class="tab-btn active">👥 รายชื่อผู้เล่น (คลิกดูรายละเอียด)</button>
+    <button id="btn-feedbacks" class="tab-btn">💬 ฟีดแบคทั้งหมด</button>
+  </div>
+
+  <div id="tab-players" class="tab-content active">
+    <table>
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>คะแนนสูงสุด (A/B)</th>
+          <th>จำนวนรอบ</th>
+          <th>เวลารวมที่เล่น</th>
+          <th>สมัครเมื่อ</th>
+        </tr>
+      </thead>
+      <tbody id="players-tbody"></tbody>
+    </table>
+  </div>
+
+  <div id="tab-feedbacks" class="tab-content">
+    <div id="feedbacks-container"></div>
+  </div>
+</div>
+
+<div id="user-modal">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeModal()">&times;</span>
+    <h2 id="modal-title" style="color: #00e5ff;">ข้อมูลการเล่นของ: </h2>
+    <div id="modal-stats" style="margin-bottom: 20px; color: #aaa;"></div>
+    <hr style="border: 0; border-top: 1px solid #333;">
+    <h3>ประวัติการเล่นแต่ละรอบ (Sessions):</h3>
+    <div id="session-history"></div>
+  </div>
+</div>
+
+<script type="module" src="/src/admin.js"></script>
+<script>
+  function closeModal() { document.getElementById('user-modal').style.display = 'none'; }
+</script>
+</body>
+</html>
