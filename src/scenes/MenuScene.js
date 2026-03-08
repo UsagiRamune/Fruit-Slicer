@@ -66,7 +66,7 @@ export class MenuScene extends Phaser.Scene {
     playBtn.on('pointerover', () => playBtn.setStyle({ backgroundColor: '#00cc66' }))
     playBtn.on('pointerout',  () => playBtn.setStyle({ backgroundColor: '#00ff88' }))
     playBtn.on('pointerdown', () => {
-      this.scene.start('GameScene')
+      this.scene.start('TutorialScene')
     })
 
     // Leaderboard button
