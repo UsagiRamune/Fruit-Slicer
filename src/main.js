@@ -6,6 +6,7 @@ import { GameScene }        from './scenes/GameScene.js'
 import { ResultScene }      from './scenes/ResultScene.js'
 import { LeaderboardScene } from './scenes/LeaderboardScene.js'
 import { TutorialScene } from './scenes/TutorialScene.js'
+import { GalleryScene } from './scenes/GalleryScene.js'
 
 const params = new URLSearchParams(window.location.search)
 const version = params.get('v') || 'A'
@@ -15,7 +16,7 @@ const config = {
   backgroundColor: GAME_CONFIG.backgroundColor,
   parent: 'game-container',
   dom: { createContainer: true },
-  scene: [BootScene, MenuScene, TutorialScene, GameScene, ResultScene, LeaderboardScene],
+  scene: [BootScene, MenuScene, TutorialScene, GameScene, ResultScene, LeaderboardScene, GalleryScene],
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
